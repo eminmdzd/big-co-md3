@@ -1,0 +1,6 @@
+node_modules
+.next
+prisma
+start.sh
+.env
+.DS_Store
