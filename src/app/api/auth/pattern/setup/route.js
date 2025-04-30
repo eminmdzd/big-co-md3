@@ -1,7 +1,39 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken, encodePattern, generateToken } from '@/lib/auth';
-import { storePattern, getUser } from '@/lib/identity-provider';
+
+// Default pattern options that will be used if none are found in the database
+const DEFAULT_PATTERN_OPTIONS = {
+  phrases: [
+    "The sky is blue",
+    "Water is wet",
+    "Fire is hot",
+    "Mountains are tall",
+    "Coffee is bitter",
+    "Honey is sweet",
+    "Birds can fly",
+    "Fish can swim",
+    "Trees have leaves",
+    "Flowers smell nice"
+  ],
+  images: [
+    "/patterns/image1.jpg",
+    "/patterns/image2.jpg",
+    "/patterns/image3.jpg",
+    "/patterns/image4.jpg",
+    "/patterns/image5.jpg",
+    "/patterns/image6.jpg",
+    "/patterns/image7.jpg",
+    "/patterns/image8.jpg",
+    "/patterns/image9.jpg",
+    "/patterns/image10.jpg"
+  ],
+  icons: [
+    "🏠", "🚗", "⚽", "🍎", "💻", "📱", "🎵", "🎬",
+    "📚", "✈️", "🔒", "⏰", "☂️", "🎁", "🔑", "💡",
+    "📷", "🌈", "⭐", "🐱", "🐶", "🌺", "🌞", "📝"
+  ]
+};
 
 export async function GET(req) {
   try {
@@ -21,19 +53,32 @@ export async function GET(req) {
     }
     
     // Get user's available pattern options
-    const patternSetup = await prisma.patternSetup.findUnique({
+    let patternSetup = await prisma.patternSetup.findUnique({
       where: { userId }
     });
     
+    // If no pattern setup exists, create one with default options
     if (!patternSetup) {
-      return NextResponse.json({ error: 'Pattern setup not found' }, { status: 404 });
+      patternSetup = await prisma.patternSetup.create({
+        data: {
+          userId,
+          phrases: JSON.stringify(DEFAULT_PATTERN_OPTIONS.phrases),
+          images: JSON.stringify(DEFAULT_PATTERN_OPTIONS.images),
+          icons: JSON.stringify(DEFAULT_PATTERN_OPTIONS.icons),
+          user: {
+            connect: {
+              id: userId
+            }
+          }
+        }
+      });
     }
     
     // Return available options for pattern setup
     return NextResponse.json({
-      phrases: JSON.parse(patternSetup.availablePhrases),
-      images: JSON.parse(patternSetup.availableImages),
-      icons: JSON.parse(patternSetup.availableIcons)
+      phrases: JSON.parse(patternSetup.phrases),
+      images: JSON.parse(patternSetup.images),
+      icons: JSON.parse(patternSetup.icons)
     });
     
   } catch (error) {
@@ -88,19 +133,6 @@ export async function POST(req) {
         isPatternSet: true
       }
     });
-    
-    // Try to store pattern in identity provider if integration is enabled
-    try {
-      // Get identity provider user ID
-      const idpUser = await getUser(user.username);
-      
-      if (idpUser) {
-        await storePattern(idpUser.id, encodedPattern);
-      }
-    } catch (idpError) {
-      console.warn('Identity provider pattern storage failed, continuing with local storage:', idpError.message);
-      // Don't fail the pattern setup if identity provider integration fails
-    }
     
     // Generate new token with updated user info
     const newToken = generateToken(updatedUser);

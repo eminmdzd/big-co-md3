@@ -1,137 +1,116 @@
-# IHG Pattern-Based Two-Factor Authentication
+# Security Pattern Authentication System
 
-This project implements a secure two-factor authentication system for IHG (InterContinental Hotels Group) that uses pattern recognition instead of traditional passkeys. The system allows users to create a security pattern by selecting elements from different categories (phrases, images, and icons) and requires this pattern for authentication.
+A web application that implements a security pattern-based authentication system, with email notifications for users who haven't set up their security patterns.
 
-## Key Features
+## Features
 
-- Traditional username/password authentication
-- Pattern-based two-factor authentication
-- Integration with PingFederate or PingOne for enterprise authentication
-- Pattern setup and reset functionality
-- Account lockout after multiple failed attempts
-- Responsive UI for all devices
+- User registration and login
+- Security pattern setup
+- Pattern-based authentication
+- Automated email notifications for users who haven't set up patterns
 
-## Technology Stack
+## Getting Started
 
-- Frontend: Next.js, React, TailwindCSS
-- Backend: Next.js API Routes
-- Database: SQLite (via Prisma ORM)
-- Authentication: JWT, PingFederate/PingOne Identity
+### Prerequisites
 
-## Setup Instructions
+- Node.js (18.x or higher)
+- npm or yarn
+- PostgreSQL database
 
-1. Install dependencies:
-   ```
-   npm install
-   ```
+### Installation
 
-2. Create a `.env.local` file with the following variables:
-   ```
-   # PingOne Environment Configuration (Legacy)
-   PING_ONE_AUTH_URL=https://auth.pingone.com
-   PING_ONE_API_URL=https://api.pingone.com/v1
-   PING_ONE_ENV_ID=your_environment_id
-   PING_ONE_CLIENT_ID=your_client_id
-   PING_ONE_CLIENT_SECRET=your_client_secret
+1. Clone the repository:
+```
+git clone <repository-url>
+cd <project-directory>
+```
 
-   # PingFederate Configuration
-   PING_FED_BASE_URL=https://pingfederate.example.com
-   PING_FED_CLIENT_ID=your_pingfed_client_id
-   PING_FED_CLIENT_SECRET=your_pingfed_client_secret
-   PING_FED_AUTH_PATH=/as/token.oauth2
-   PING_FED_API_PATH=/pf-admin/api/v1
+2. Install dependencies:
+```
+npm install
+```
 
-   # Use PingFederate instead of PingOne (set to true to enable)
-   USE_PING_FEDERATE=false
+3. Create a `.env` file in the root directory with the following variables:
+```
+# Application
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-   # JWT Secret for local token generation
-   JWT_SECRET=ihg-pattern-2fa-secret-key
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/mydb?schema=public"
 
-   # Database URL (used by Prisma)
-   DATABASE_URL="file:./prisma/dev.db"
+# Authentication
+JWT_SECRET=your-jwt-secret-key
 
-   # API Base URL
-   NEXT_PUBLIC_API_URL=http://localhost:3000/api
-   ```
+# SendGrid Email
+SENDGRID_API_KEY=your-sendgrid-api-key
 
-3. Initialize the database:
-   ```
-   npx prisma db push
-   ```
+# Cron Jobs (for API-triggered notifications)
+CRON_API_KEY=your-cron-job-api-key
+```
 
-4. You can use the provided shell script to automatically initialize the database and start the server:
-   ```
-   ./start.sh
-   ```
+4. Set up the database:
+```
+npx prisma migrate dev
+```
 
-   Or run the development server manually:
-   ```
-   npm run dev
-   ```
+5. Run the development server:
+```
+npm run dev
+```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+The application will be available at http://localhost:3000.
 
-6. To switch between PingFederate and PingOne, edit the .env.local file and change the `USE_PING_FEDERATE` value.
+## User Notification System
+
+### Manual Execution
+
+To send notifications to users who haven't set up their security patterns:
+
+```
+npm run notify-users
+```
+
+### Scheduled Execution
+
+Set up a cron job or scheduled task to run notifications regularly:
+
+```
+0 9 * * * cd /path/to/project && npm run notify-users
+```
+
+Or use an HTTP request to trigger notifications:
+
+```
+curl -X GET "http://localhost:3000/api/cron/pattern-reminders?apiKey=your-cron-job-api-key"
+```
+
+## Testing Email Configuration
+
+To test the SendGrid email configuration:
+
+```
+npm run test:email your-test-email@example.com
+```
+
+## Security Patterns
+
+The system uses a combination of phrases, images, and icons for security patterns:
+
+- **Phrases**: Common statements that users can remember easily
+- **Images**: Visual elements that add a graphical component to the pattern
+- **Icons**: Emoji icons that provide a quick visual reference
+
+Users must select a combination of these elements to create their unique security pattern.
 
 ## Authentication Flow
 
-1. **User Registration**:
-   - User creates an account with username, email, and password
-   - User is prompted to set up their security pattern
-
-2. **Login Process**:
+1. **User Registration**: User creates an account with username, email, and password
+2. **Pattern Setup**: User selects a combination of phrases, images, and icons
+3. **Login Process**: 
    - User enters username and password
    - If valid, user is prompted to verify their security pattern
-   - After successful pattern verification, user gains access to the system
-
-3. **Pattern Reset**:
-   - User can reset their pattern by verifying their identity
-   - Requires username, email, and password verification
-
-## Ping Identity Integration
-
-The application integrates with either PingFederate or PingOne for enterprise identity management:
-
-### PingFederate Integration
-
-PingFederate is an enterprise-grade identity federation server that provides a comprehensive platform for identity and access management. The integration includes:
-
-- User creation and management via PingFederate APIs
-- Multi-factor authentication integration
-- Custom pattern attribute storage using PingFederate's user attributes
-- Authentication flow tracking and policy enforcement
-- Support for OpenID Connect and OAuth 2.0 flows
-- Ability to integrate with existing enterprise PingFederate deployments
-
-### PingOne Integration (Legacy)
-
-Alternative integration with PingOne cloud service:
-
-- User creation and management in PingOne
-- Custom pattern attribute storage
-- Authentication flow tracking
-- Secure credential storage
-
-## Security Features
-
-- Passwords are hashed using bcrypt
-- JWT tokens for session management
-- Account lockout after 5 failed attempts (30-minute cooldown)
-- Security patterns stored in encrypted format
-- Rate limiting for API requests
-
-## Project Structure
-
-- `/src/app` - Next.js application routes and API endpoints
-- `/src/components` - React components for UI
-- `/src/lib` - Utility functions and service integrations
-  - `/src/lib/identity-provider.js` - Façade for identity provider operations
-  - `/src/lib/ping-federate.js` - PingFederate integration
-  - `/src/lib/ping-identity.js` - PingOne integration (legacy)
-  - `/src/lib/auth.js` - Core authentication functions
-  - `/src/lib/prisma.js` - Database client
-- `/prisma` - Database schema and client
+4. **Pattern Verification**: User must correctly enter their security pattern to gain access
 
 ## License
 
-Proprietary - IHG Internal Use Only
+This project is licensed under the MIT License.

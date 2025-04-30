@@ -21,15 +21,7 @@ export async function POST(req) {
     // Verify the pattern
     const isPatternValid = await verifyPattern(userId, pattern);
     
-    // Try to complete identity provider authentication flow if available
-    if (idpFlowId && idpUserId) {
-      try {
-        await completeAuthentication(idpFlowId, idpUserId, isPatternValid);
-      } catch (idpError) {
-        console.warn('Identity provider authentication completion failed:', idpError.message);
-        // Continue with local authentication flow
-      }
-    }
+    // Skip identity provider authentication for localhost setup
     
     if (!isPatternValid) {
       // Record failed attempt

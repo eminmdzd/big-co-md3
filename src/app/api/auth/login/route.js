@@ -13,7 +13,7 @@ export async function POST(req) {
     }
     
     // Find user by username
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { username }
     });
     
@@ -39,20 +39,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
     
-    // Try to get the user from identity provider if integration is enabled
-    let idpUser = null;
-    let authFlow = null;
-    try {
-      idpUser = await getUser(username);
-      
-      // If identity provider user exists, initiate authentication flow
-      if (idpUser) {
-        authFlow = await initiateAuthentication(username);
-      }
-    } catch (idpError) {
-      console.warn('Identity provider not available, using local auth flow:', idpError.message);
-      // Continue with local auth flow if identity provider integration fails
-    }
+    // Skip identity provider integration for localhost setup
     
     // Generate JWT token for initial authentication
     const token = generateToken(user);
@@ -64,8 +51,7 @@ export async function POST(req) {
         message: 'Login successful - Pattern setup required',
         userId: user.id,
         token,
-        requiresPatternSetup: true,
-        idpFlowId: authFlow?.flowId
+        requiresPatternSetup: true
       });
     }
     
@@ -74,9 +60,7 @@ export async function POST(req) {
       message: 'Login successful - Pattern verification required',
       userId: user.id,
       token,
-      requiresPatternVerification: true,
-      idpFlowId: authFlow?.flowId,
-      idpUserId: idpUser?.id
+      requiresPatternVerification: true
     });
     
   } catch (error) {

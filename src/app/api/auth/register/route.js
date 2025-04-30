@@ -55,24 +55,19 @@ export async function POST(req) {
     // Store available options for user's pattern setup
     await prisma.patternSetup.create({
       data: {
-        userId: newUser.id,
-        availablePhrases: JSON.stringify(shufflePhrases),
-        availableImages: JSON.stringify(shuffleImages),
-        availableIcons: JSON.stringify(shuffleIcons)
+        id: newUser.id,
+        phrases: JSON.stringify(shufflePhrases),
+        images: JSON.stringify(shuffleImages),
+        icons: JSON.stringify(shuffleIcons),
+        user: {
+          connect: {
+            id: newUser.id
+          }
+        }
       }
     });
     
-    // Create user in identity provider (will fail gracefully if not configured)
-    try {
-      await createUser({
-        username,
-        email,
-        firstName: username // Using username as first name if not provided
-      });
-    } catch (idpError) {
-      console.warn('Identity provider integration failed, continuing with local auth:', idpError.message);
-      // Don't fail the registration if identity provider integration fails
-    }
+    // Skip identity provider integration for localhost setup
     
     // Generate JWT token for initial authentication
     const { generateToken } = await import('@/lib/auth');
