@@ -17,7 +17,7 @@ export async function comparePassword(password, hashedPassword) {
 }
 
 // Generate JWT token
-export function generateToken(user) {
+export function generateToken(user, expiresIn = '1h') {
   const payload = {
     id: user.id,
     username: user.username,
@@ -25,7 +25,21 @@ export function generateToken(user) {
     isPatternSet: user.isPatternSet
   };
   
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+}
+
+// Generate a secure setup token for email links
+export function generateSetupToken(user) {
+  const payload = {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    purpose: 'pattern_setup',
+    isPatternSet: user.isPatternSet
+  };
+  
+  // Setup links valid for 7 days
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
 // Verify JWT token

@@ -1,6 +1,11 @@
 // This script sends notification emails to users who have accounts but haven't set up their security pattern
 import { prisma } from '../src/lib/prisma.js';
 import sgMail from '@sendgrid/mail';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // Set SendGrid API key
 if (process.env.SENDGRID_API_KEY) {
@@ -9,14 +14,35 @@ if (process.env.SENDGRID_API_KEY) {
   console.warn('SENDGRID_API_KEY not set. Emails will be logged but not sent.');
 }
 
+// JWT Secret key for generating secure setup tokens
+const JWT_SECRET = process.env.JWT_SECRET || 'ihg-pattern-2fa-secret-key';
+
 // Sender email - must be verified in SendGrid account
 const FROM_EMAIL = 'fakeitteamihgdemo@gmail.com';
 const FROM_NAME = 'IHG Security Team';
 
+// Generate a secure setup token for direct pattern setup
+function generateSetupToken(user) {
+  const payload = {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    purpose: 'pattern_setup',
+    isPatternSet: false
+  };
+  
+  // Setup links valid for 7 days
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+}
+
 // Function to send email notification to a user using SendGrid
 async function sendNotificationEmail(user) {
   try {
-    const setupUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/pattern-setup?userId=${user.id}`;
+    // Generate a secure token for direct pattern setup
+    const secureToken = generateSetupToken(user);
+    
+    // Create a secure setup URL with the token
+    const setupUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/pattern-setup?token=${secureToken}`;
     
     const msg = {
       to: user.email,
@@ -25,15 +51,16 @@ async function sendNotificationEmail(user) {
         name: FROM_NAME
       },
       subject: 'Security Pattern Setup Reminder',
-      text: `Hello ${user.username},\n\nWe noticed you haven't set up your security pattern yet. This additional security feature helps protect your account. Please log in and set up your pattern at your earliest convenience.\n\nSetup link: ${setupUrl}\n\nThank you,\nSecurity Team`,
+      text: `Hello ${user.username},\n\nWe noticed you haven't set up your security pattern yet. This additional security feature helps protect your account.\n\nYou can set up your pattern by clicking the link below. No login required!\n\nSecure setup link: ${setupUrl}\n\nThis link is valid for 7 days and can only be used once.\n\nThank you,\nSecurity Team`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Security Pattern Setup Reminder</h2>
           <p>Hello ${user.username},</p>
           <p>We noticed you haven't set up your security pattern yet. This additional security feature helps protect your account.</p>
-          <p>Please log in and set up your pattern at your earliest convenience.</p>
+          <p><strong>You can set up your pattern directly by clicking the button below. No login required!</strong></p>
           <p><a href="${setupUrl}" style="display: inline-block; background-color: #0066cc; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Set Up Security Pattern</a></p>
-          <p>Or copy and paste this link: ${setupUrl}</p>
+          <p>Or copy and paste this secure link: ${setupUrl}</p>
+          <p><em>This link is valid for 7 days and can only be used once.</em></p>
           <p>Thank you,<br>Security Team</p>
         </div>
       `

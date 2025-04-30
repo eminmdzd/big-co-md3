@@ -21,16 +21,43 @@ const PatternSetup = () => {
   useEffect(() => {
     const fetchPatternOptions = async () => {
       try {
-        const userId = localStorage.getItem('user_id');
-        const token = localStorage.getItem('auth_token');
+        // First check for a token in the URL (for email links)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
         
-        if (!userId || !token) {
-          router.push('/auth/login');
-          return;
+        let requestToken;
+        let userId;
+        
+        if (urlToken) {
+          // Use the token from the URL for secure direct setup from email
+          requestToken = urlToken;
+        } else {
+          // Otherwise use local storage token (for users who are already logged in)
+          userId = localStorage.getItem('user_id');
+          requestToken = localStorage.getItem('auth_token');
+          
+          if (!userId || !requestToken) {
+            router.push('/auth/login');
+            return;
+          }
         }
         
-        const response = await axios.get(`/api/auth/pattern/setup?userId=${userId}&token=${token}`);
+        // Build the API request with the appropriate parameters
+        let apiUrl = '/api/auth/pattern/setup?';
+        if (urlToken) {
+          apiUrl += `token=${requestToken}`;
+        } else {
+          apiUrl += `userId=${userId}&token=${requestToken}`;
+        }
+        
+        const response = await axios.get(apiUrl);
         setSetupOptions(response.data);
+        
+        // If we have user info in the response, store it
+        if (response.data.userId) {
+          localStorage.setItem('user_id', response.data.userId);
+        }
+        
         setLoading(false);
       } catch (err) {
         setError(err.response?.data?.error || 'Failed to load pattern options');
@@ -70,23 +97,46 @@ const PatternSetup = () => {
     setLoading(true);
     
     try {
-      const userId = localStorage.getItem('user_id');
-      const token = localStorage.getItem('auth_token');
+      // First check for a token in the URL (for email links)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get('token');
       
-      if (!userId || !token) {
-        router.push('/auth/login');
-        return;
+      let requestToken;
+      let userId;
+      
+      if (urlToken) {
+        // Use the token from the URL for secure direct setup from email
+        requestToken = urlToken;
+        // The userId will be extracted from the token on the server
+      } else {
+        // Otherwise use local storage values for users who are already logged in
+        userId = localStorage.getItem('user_id');
+        requestToken = localStorage.getItem('auth_token');
+        
+        if (!userId || !requestToken) {
+          router.push('/auth/login');
+          return;
+        }
       }
       
-      const response = await axios.post('/api/auth/pattern/setup', {
-        userId,
-        token,
-        pattern
-      });
+      // Make the API request with the appropriate parameters
+      const requestData = { pattern };
+      
+      if (urlToken) {
+        requestData.token = urlToken;
+      } else {
+        requestData.userId = userId;
+        requestData.token = requestToken;
+      }
+      
+      const response = await axios.post('/api/auth/pattern/setup', requestData);
       
       // Handle successful response
       if (response.data && response.data.token) {
         localStorage.setItem('auth_token', response.data.token);
+        if (response.data.userId) {
+          localStorage.setItem('user_id', response.data.userId);
+        }
         
         // Redirect to dashboard or success page
         router.push('/auth/setup-success');
