@@ -5,10 +5,11 @@ A web application that implements a security pattern-based authentication system
 ## Features
 
 - User registration and login
-- Security pattern setup and verification
+- Security pattern setup using universally recognizable symbols
 - Pattern-based two-factor authentication
 - Automated email notifications for users without security patterns
 - Account lockout after multiple failed attempts
+- One-time use secure setup links via email
 
 ## Getting Started
 
@@ -104,7 +105,12 @@ To send notification emails to users who haven't set up their security patterns:
 npm run notify-users
 ```
 
-This script finds all users without security patterns and sends them reminder emails with instructions on how to set up their pattern.
+This script finds all users without security patterns and sends them reminder emails with secure links to set up their pattern. These links:
+
+- Allow direct pattern setup without requiring login
+- Are valid for 7 days
+- Can only be used once (become invalid immediately after successful use)
+- Include user identification and purpose verification
 
 If you want to schedule this to run automatically, you could set up a cron job in a production environment:
 
@@ -126,23 +132,36 @@ This will send a test email to the specified address using your SendGrid API key
 
 ## Security Patterns
 
-The system uses a combination of phrases, images, and icons for security patterns:
+The system uses universally recognizable symbols for pattern creation:
 
-- **Phrases**: Common statements that users can remember easily
-- **Images**: Visual elements that add a graphical component to the pattern
-- **Icons**: Emoji icons that provide a quick visual reference
+- **Numbers**: Numeric emojis (1️⃣, 2️⃣, 3️⃣, etc.) that are language-independent
+- **Shapes**: Shape emojis (⭐, 🔶, 🔷, etc.) that are visually distinctive
+- **Objects**: Object emojis (🏠, 🚗, ⚽, etc.) that are easily recognizable worldwide
 
-Users must select a combination of these elements to create their unique security pattern.
+Users must select one element from each category to create their unique 3-element pattern. 
+Elements are randomly shuffled for each user to ensure pattern uniqueness and security.
 
 ## Authentication Flow
 
 1. **User Registration**: User creates an account with username, email, and password
-2. **Pattern Setup**: User selects a combination of phrases, images, and icons
+2. **Pattern Setup**: User selects a pattern of one number, one shape, and one object
 3. **Login Process**: 
    - User enters username and password
    - If valid, user is prompted to verify their security pattern
 4. **Pattern Verification**: User must correctly enter their security pattern to gain access
 5. **Account Security**: After 5 failed pattern attempts, the account is temporarily locked
+
+## Alternative Setup Flow
+
+Users can also set up their security pattern through a secure link sent via email:
+
+1. **Email Notification**: System sends email with a secure one-time-use setup link
+2. **Direct Setup**: User clicks link and is taken directly to pattern setup (no login required)
+3. **Pattern Creation**: User selects their pattern elements
+4. **Link Invalidation**: After successful setup, the link is immediately invalidated
+5. **Automatic Login**: User is logged in and can access the system
+
+This alternative flow makes it easier for users to complete their security setup.
 
 ## Project Structure
 

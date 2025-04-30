@@ -172,47 +172,47 @@ const PatternSetup = () => {
         <div className="space-y-6">
           <div>
             <p className="text-sm text-gray-600 mb-4">
-              Select 3 elements in a specific order to create your pattern. 
-              You'll need to remember this pattern for future logins.
+              Select 3 elements to create your security pattern: one number, one shape, and one object.
+              You'll need to remember this pattern in the same order for future logins.
             </p>
           </div>
           
           <div>
-            <p className="text-sm font-medium mb-2">Security Phrases</p>
-            <div className="grid grid-cols-2 gap-2">
-              {setupOptions.phrases.map((phrase, index) => (
+            <p className="text-sm font-medium mb-2">Numbers</p>
+            <div className="grid grid-cols-4 gap-2">
+              {setupOptions.phrases?.map((number, index) => (
                 <Button
                   key={`phrase-${index}`}
                   onClick={() => handlePatternSelection('phrase', index)}
                   variant={pattern.includes(`phrase-${index}`) ? "default" : "outline"}
-                  className={`h-12 ${pattern.includes(`phrase-${index}`) ? 'bg-blue-600 text-white' : ''}`}
+                  className={`h-16 text-3xl ${pattern.includes(`phrase-${index}`) ? 'bg-blue-600' : ''}`}
                 >
-                  {phrase}
+                  {number}
                 </Button>
               ))}
             </div>
           </div>
           
           <div>
-            <p className="text-sm font-medium mb-2">Security Images</p>
+            <p className="text-sm font-medium mb-2">Shapes</p>
             <div className="grid grid-cols-4 gap-2">
-              {setupOptions.images.map((image, index) => (
+              {setupOptions.images?.map((shape, index) => (
                 <Button
                   key={`image-${index}`}
                   onClick={() => handlePatternSelection('image', index)}
                   variant={pattern.includes(`image-${index}`) ? "default" : "outline"}
                   className={`h-16 text-3xl ${pattern.includes(`image-${index}`) ? 'bg-blue-600' : ''}`}
                 >
-                  {image}
+                  {shape}
                 </Button>
               ))}
             </div>
           </div>
           
           <div>
-            <p className="text-sm font-medium mb-2">Security Icons</p>
+            <p className="text-sm font-medium mb-2">Objects</p>
             <div className="grid grid-cols-4 gap-2">
-              {setupOptions.icons.map((icon, index) => (
+              {setupOptions.icons?.map((icon, index) => (
                 <Button
                   key={`icon-${index}`}
                   onClick={() => handlePatternSelection('icon', index)}

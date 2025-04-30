@@ -30,12 +30,16 @@ export function generateToken(user, expiresIn = '1h') {
 
 // Generate a secure setup token for email links
 export function generateSetupToken(user) {
+  // Create a unique token ID to track its usage
+  const tokenId = `setup_${user.id}_${Date.now()}`;
+  
   const payload = {
     id: user.id,
     username: user.username,
     email: user.email,
     purpose: 'pattern_setup',
-    isPatternSet: user.isPatternSet
+    isPatternSet: user.isPatternSet,
+    tokenId: tokenId
   };
   
   // Setup links valid for 7 days

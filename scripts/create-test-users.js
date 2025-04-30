@@ -46,21 +46,25 @@ const users = [
   }
 ];
 
-// Default pattern setup options
+// Default pattern setup options - using the same options as the main app
 const patternOptions = {
   phrases: [
-    "Blue Sky", "Red Door", "Green Tree", "Silver Moon",
-    "Golden Sun", "Purple Rain", "Yellow Star", "Orange Leaf"
+    "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "0️⃣", "🔟", "🔢"
   ],
-  images: ['🌴', '🏔️', '🌊', '🌺', '🌇', '🏙️', '🏞️', '🌄'],
-  icons: ['♠️', '⭐', '△', '□', '♦️', '♥️', '○', '✓']
+  images: [
+    "⭐", "🔶", "🔷", "🔺", "🔻", "⬛", "⬜", "🔘", "⚪", "🔴", "🔵", "🟢"
+  ],
+  icons: [
+    "🏠", "🚗", "⚽", "🍎", "💻", "📱", "🎵", "🎬", "🔒", "⏰", "🎁", "🔑",
+    "💡", "📷", "🌞", "🐶", "🐱", "🌺", "🏔️", "🌊", "✈️", "🚢", "🌍", "🍕"
+  ]
 };
 
 // Sample pattern for users with pattern
 const samplePattern = [
-  { type: "phrase", value: "Blue Sky" },
-  { type: "image", value: "🌴" }, 
-  { type: "icon", value: "⭐" }
+  { type: "phrase", value: "1️⃣" },  // A number
+  { type: "image", value: "⭐" },    // A shape
+  { type: "icon", value: "🏠" }     // An object
 ];
 
 // Function to create a test user
@@ -96,13 +100,27 @@ async function createTestUser(userData) {
 
     console.log(`Created user: ${user.username} (${user.email})`);
 
+    // Helper function to shuffle an array (Fisher-Yates shuffle)
+    const shuffleArray = (array) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+    
+    // Shuffle each array of options to ensure randomness
+    const shuffledNumbers = shuffleArray(patternOptions.phrases);
+    const shuffledShapes = shuffleArray(patternOptions.images);
+    const shuffledIcons = shuffleArray(patternOptions.icons);
+    
     // Create pattern setup
     await prisma.patternSetup.create({
       data: {
-        id: user.id,
-        phrases: JSON.stringify(patternOptions.phrases),
-        images: JSON.stringify(patternOptions.images),
-        icons: JSON.stringify(patternOptions.icons),
+        phrases: JSON.stringify(shuffledNumbers),
+        images: JSON.stringify(shuffledShapes),
+        icons: JSON.stringify(shuffledIcons),
         user: {
           connect: {
             id: user.id

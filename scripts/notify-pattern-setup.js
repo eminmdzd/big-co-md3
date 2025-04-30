@@ -23,12 +23,16 @@ const FROM_NAME = 'IHG Security Team';
 
 // Generate a secure setup token for direct pattern setup
 function generateSetupToken(user) {
+  // Create a unique token ID to track its usage
+  const tokenId = `setup_${user.id}_${Date.now()}`;
+  
   const payload = {
     id: user.id,
     username: user.username,
     email: user.email,
     purpose: 'pattern_setup',
-    isPatternSet: false
+    isPatternSet: false,
+    tokenId: tokenId
   };
   
   // Setup links valid for 7 days

@@ -3,21 +3,21 @@ import { prisma } from '@/lib/prisma';
 import { verifyToken, encodePattern, generateToken } from '@/lib/auth';
 
 // Default pattern options that will be used if none are found in the database
-// Using universally recognizable symbols and emojis without text
+// Using universally recognizable symbols without any text
 const DEFAULT_PATTERN_OPTIONS = {
-  colors: [
-    "🔴", // red
-    "🟠", // orange
-    "🟡", // yellow
-    "🟢", // green
-    "🔵", // blue
-    "🟣", // purple
-    "⚪", // white
-    "⚫", // black
-    "🟤", // brown
-    "🟥", // red square
-    "🟧", // orange square
-    "🟨"  // yellow square
+  numbers: [
+    "1️⃣", // one
+    "2️⃣", // two
+    "3️⃣", // three
+    "4️⃣", // four
+    "5️⃣", // five
+    "6️⃣", // six
+    "7️⃣", // seven
+    "8️⃣", // eight
+    "9️⃣", // nine
+    "0️⃣", // zero
+    "🔟", // ten
+    "🔢"  // numbers
   ],
   shapes: [
     "⭐", // star
@@ -28,10 +28,10 @@ const DEFAULT_PATTERN_OPTIONS = {
     "⬛", // square
     "⬜", // square
     "🔘", // button
+    "⚪", // circle
+    "🔴", // circle
     "🔵", // circle
-    "⚾", // ball
-    "🎯", // target
-    "❤️"  // heart
+    "🟢"  // circle
   ],
   icons: [
     "🏠", // house
@@ -81,8 +81,22 @@ export async function GET(req) {
     // Check if this is a secure setup token from email link (has purpose field)
     const isSecureSetupToken = decodedToken.purpose === 'pattern_setup';
     
-    // For regular tokens (not from email), verify userId matches
-    if (!isSecureSetupToken) {
+    // For secure tokens from email links, check if token has already been used
+    if (isSecureSetupToken) {
+      // Check if this token has been used before
+      if (decodedToken.tokenId) {
+        const usedToken = await prisma.usedSetupToken.findUnique({
+          where: { tokenId: decodedToken.tokenId }
+        });
+        
+        if (usedToken) {
+          return NextResponse.json({ 
+            error: 'This security link has already been used. Please request a new one.' 
+          }, { status: 401 });
+        }
+      }
+    } else {
+      // For regular tokens (not from email), verify userId matches
       if (!userId || decodedToken.id !== userId) {
         return NextResponse.json({ error: 'Invalid user session' }, { status: 401 });
       }
@@ -109,14 +123,13 @@ export async function GET(req) {
     // If no pattern setup exists, create one with shuffled default options
     if (!patternSetup) {
       // Shuffle each array of options
-      const shuffledColors = shuffleArray(DEFAULT_PATTERN_OPTIONS.colors);
+      const shuffledNumbers = shuffleArray(DEFAULT_PATTERN_OPTIONS.numbers);
       const shuffledShapes = shuffleArray(DEFAULT_PATTERN_OPTIONS.shapes);
       const shuffledIcons = shuffleArray(DEFAULT_PATTERN_OPTIONS.icons);
       
       patternSetup = await prisma.patternSetup.create({
         data: {
-          userId: targetUserId,
-          phrases: JSON.stringify(shuffledColors),
+          phrases: JSON.stringify(shuffledNumbers),
           images: JSON.stringify(shuffledShapes),
           icons: JSON.stringify(shuffledIcons),
           user: {
@@ -171,6 +184,19 @@ export async function POST(req) {
     // Check if this is a secure setup token from email link (has purpose field)
     const isSecureSetupToken = decodedToken.purpose === 'pattern_setup';
     
+    // For secure tokens from email links, check if token has already been used
+    if (isSecureSetupToken && decodedToken.tokenId) {
+      const usedToken = await prisma.usedSetupToken.findUnique({
+        where: { tokenId: decodedToken.tokenId }
+      });
+      
+      if (usedToken) {
+        return NextResponse.json({ 
+          error: 'This security link has already been used. Please request a new one.' 
+        }, { status: 401 });
+      }
+    }
+    
     // Determine the target user ID based on token type
     let targetUserId;
     if (isSecureSetupToken) {
@@ -218,6 +244,20 @@ export async function POST(req) {
     
     // Generate new token with updated user info
     const newToken = generateToken(updatedUser);
+    
+    // For secure tokens from email links, mark the token as used
+    if (isSecureSetupToken && decodedToken.tokenId) {
+      await prisma.usedSetupToken.create({
+        data: {
+          tokenId: decodedToken.tokenId,
+          user: {
+            connect: {
+              id: targetUserId
+            }
+          }
+        }
+      });
+    }
     
     // Return success response
     return NextResponse.json({
