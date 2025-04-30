@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken, verifyPattern, recordFailedAttempt, resetFailedAttempts, generateToken } from '@/lib/auth';
-import { completeAuthentication } from '@/lib/identity-provider';
 
 export async function POST(req) {
   try {
-    const { userId, pattern, token, idpFlowId, idpUserId } = await req.json();
+    const { userId, pattern, token } = await req.json();
     
     // Check if required fields are present
     if (!userId || !pattern || !token) {

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { comparePassword, generateToken, checkLoginAttempts, recordFailedAttempt } from '@/lib/auth';
-import { getUser, initiateAuthentication } from '@/lib/identity-provider';
 
 export async function POST(req) {
   try {

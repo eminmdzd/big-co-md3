@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, comparePassword, verifyToken, generateToken } from '@/lib/auth';
-import { getPingOneUser, storeUserPattern } from '@/lib/ping-identity';
 
 export async function POST(req) {
   try {
@@ -40,18 +39,7 @@ export async function POST(req) {
       }
     });
     
-    // Reset the pattern in PingOne if integration is enabled
-    try {
-      const pingOneUser = await getPingOneUser(username);
-      
-      if (pingOneUser) {
-        // Store null pattern to reset
-        await storeUserPattern(pingOneUser.id, null);
-      }
-    } catch (pingError) {
-      console.warn('PingOne pattern reset failed, continuing with local reset:', pingError.message);
-      // Don't fail the pattern reset if PingOne integration fails
-    }
+    // No external identity provider integration
     
     // Generate new selection of phrases, images, and icons
     const phrases = [
@@ -71,9 +59,9 @@ export async function POST(req) {
     await prisma.patternSetup.update({
       where: { userId: user.id },
       data: {
-        availablePhrases: JSON.stringify(shufflePhrases),
-        availableImages: JSON.stringify(shuffleImages),
-        availableIcons: JSON.stringify(shuffleIcons)
+        phrases: JSON.stringify(shufflePhrases),
+        images: JSON.stringify(shuffleImages),
+        icons: JSON.stringify(shuffleIcons)
       }
     });
     
